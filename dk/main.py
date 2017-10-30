@@ -6,7 +6,11 @@ from tensorflow.python.platform import gfile
 from time import strftime, localtime, time
 import vgg
 from tqdm import *
+import os
 slim = tf.contrib.slim
+
+os.system("python3 feature.py --feature mfcc --training True")
+os.system("python3 feature.py --feature mfcc --training False")
 
 ### properties
 # General
@@ -20,7 +24,7 @@ learning_rate = 0.0002
 metadata_path = 'dataset/track_metadata.csv'
 # True if you want to train, False if you already trained your model
 ### TODO : IMPORTANT !!! Please change it to False when you submit your code
-is_train_mode = True
+is_train_mode = False
 ### TODO : IMPORTANT !!! Please specify the path where your best model is saved
 ### example : checkpoint/run-0925-0348
 checkpoint_path = 'checkpoint'
@@ -111,7 +115,7 @@ with tf.Session() as sess:
         print('Model saved in file : %s'%output_dir)
     else:
         # skip training and restore graph for validation test
-        saver.restore(sess, checkpoint_path)
+        saver.restore(sess, tf.train.latest_checkpoint(checkpoint_path))
 
 
     # Validation
