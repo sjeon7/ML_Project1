@@ -61,8 +61,6 @@ with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                normalizer_fn = None,
                                normalizer_params = None)
 pred = tf.nn.softmax(net)
-#pred, _ = vgg.vgg_16(x)
-#pred = vgg.cnn(x, _is_training)
 
 # Loss and optimizer
 # TODO : declare loss and optimizer operation
@@ -82,11 +80,12 @@ with tf.Session() as sess:
         
         feature_train = pd.read_csv('dataset/mfcc_training.csv', header=None)
             
-        tbar = tqdm(range(epoch_num), ncols=80)
+        tbar = tqdm(range(epoch_num))
         for epoch in tbar:
             total_batch = train_dataloader.num_batch
             total_cost = 0
             total_acc = 0
+
             for i in range(total_batch-1):
                 # TODO: load csv file in main.py
                 batch_x, batch_y = train_dataloader.next_batch(feature_train)
@@ -102,6 +101,7 @@ with tf.Session() as sess:
                                                                       total_acc / (total_batch-1))
             tbar.set_description(desc)
             train_dataloader.reset_pointer()
+#            train_dataloader.shuffle_df()
             
         print('Training finished !')
         output_dir = checkpoint_path + '/run-%02d%02d-%02d%02d' % tuple(localtime(time()))[1:5]

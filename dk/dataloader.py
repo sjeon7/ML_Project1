@@ -30,10 +30,13 @@ class DataLoader():
             self.metadata_df = self.metadata_df[self.metadata_df['set_split'] == 'training']
         else:
             self.metadata_df = self.metadata_df[self.metadata_df['set_split'] == 'validation']
-#        self.metadata_df = self.metadata_df.reindex(np.random.permutation(self.metadata_df.index))
+            
         self.num_batch = int(len(self.metadata_df) / self.batch_size)
         self.pointer = 0
         self.label_dict = {k: v for v,k in enumerate(sorted(set(self.metadata_df[self.label_column_name].values)))}
+        
+#    def shuffle_df(self):
+#        self.metadata_df = self.metadata_df.reindex(np.random.permutation(self.metadata_df.index))
 
     def next_batch(self, feature):
         '''
@@ -45,12 +48,9 @@ class DataLoader():
         meta_df = self.metadata_df.iloc[start_pos:(start_pos+self.batch_size)]
         # TODO: load features
         track_ids = meta_df['track_id'].values
+        
 #        valid_ids, valid_features = features.compute_mfcc_example(track_ids)
 
-#        if self.is_training:
-#           feat = pd.read_csv('dataset/mfcc_training.csv', header=None)
-#        else:
-#           feat = pd.read_csv('dataset/mfcc_validation.csv', header=None)
         feature[0] = feature[0].astype(int)
         feat = feature.loc[feature[0].isin(track_ids)]
         valid_ids = feat.iloc[:,:1]
