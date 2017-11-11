@@ -1,0 +1,88 @@
+import numpy as np
+import pandas as pd
+import features
+import pickle
+
+'''
+
+'''
+class DataLoader():
+    def __init__(self, file_path, batch_size, label_column_name, is_training = True):
+        '''
+        :param file_path: file path for track_metadata.csv
+        :param batch_size:
+        :param label_column_name: column name of label (project 1: track_genre_top, project 2: listens)
+        :param is_training: training / validation mode
+        '''
+        self.batch_size = batch_size
+        self.token_stream = []
+        self.file_path = file_path
+        self.is_training = is_training
+        self.label_column_name = label_column_name
+        
+        with open('music/mfcc.pickle', 'rb') as f:
+            self.dataset = pickle.load(f)
+        self.create_batches()
+
+    def create_batches(self):
+        '''
+
+        :return:
+        '''
+        self.metadata_df = pd.read_csv(self.file_path)
+        if self.is_training:
+            self.metadata_df = self.metadata_df[self.metadata_df['set_split'] == 'training']
+        else:
+            self.metadata_df = self.metadata_df[self.metadata_df['set_split'] == 'validation']
+
+        self.num_batch = int(len(self.metadata_df) / self.batch_size)
+        self.pointer = 0
+        self.label_dict = {k: v for v,k in enumerate(sorted(set(self.metadata_df[self.label_column_name].values)))}
+
+    def next_batch(self):
+        '''
+        :return: feature array, label array (one-hot encoded)
+        '''
+        self.pointer = (self.pointer + 1) % self.num_batch
+
+        start_pos = self.pointer * self.batch_size
+        meta_df = self.metadata_df.iloc[start_pos:(start_pos+self.batch_size)]
+        # TODO: load features
+        track_ids = meta_df['track_id'].apply(lambda x: str(x).zfill(6))
+        features = [self.dataset[x] for x in track_ids]
+        # valid_ids, valid_features = features.compute_mfcc_example(track_ids)
+        # valid_df = meta_df[meta_df['track_id'].isin(valid_ids)]
+        return features, self.convert_labels(meta_df)
+
+    def reset_pointer(self):
+        self.pointer = 0
+
+    def convert_labels(self, meta_df):
+
+        '''
+
+        :param meta_df: metadata (as pandas DataFrame)
+        :return: numpy array with (batch_size, number of genres) shape. one-hot encoded
+        '''
+        # create one-hot encoded array
+        label_array = np.zeros((len(meta_df), len(self.label_dict)))
+        labels = meta_df[self.label_column_name].values
+        for i, label in enumerate(labels):
+            label_pos = self.label_dict.get(label)
+            label_array[i, label_pos] = 1
+        return label_array
+
+
+if __name__ == "__main__":
+    # for test
+    training_loader = DataLoader('dataset/track_metadata.csv', 32, 'track_genre_top', is_training=True)
+    valid_loader = DataLoader('dataset/track_metadata.csv', 32, 'track_genre_top', is_training=False)
+
+
+    for _ in range(training_loader.num_batch):
+        track_features, label_onehot = training_loader.next_batch()
+
+    for _ in range(valid_loader.num_batch):
+        track_features, label_onehot = valid_loader.next_batch()
+        
+    print("complete!")
