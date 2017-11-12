@@ -16,7 +16,7 @@ slim = tf.contrib.slim
 # TODO : declare additional properties
 # not fixed (change or add property as you like)
 batch_size = 32
-epoch_num = 2
+epoch_num = 50
 learning_rate = 0.0002
 
 # fixed
@@ -75,24 +75,34 @@ with slim.arg_scope([slim.conv2d, slim.fully_connected],
     #                           normalizer_params = None)
     #print('pool5:',net.get_shape())
 net = tf.squeeze(net,[1])
-seq_len = np.ones(32)*70
-gru = tf.nn.rnn_cell.MultiRNNCell([tf.nn.rnn_cell.GRUCell(64)]*2)
-gru_out, state = tf.nn.dynamic_rnn(gru,tf.reshape(net,[-1,70,64]),sequence_length=seq_len,dtype=tf.float32, scope='gru')
+#seq_len = np.ones(32)*70
+gru = tf.nn.rnn_cell.MultiRNNCell([tf.nn.rnn_cell.GRUCell(64)]*70)
+#gru_out, state = tf.nn.dynamic_rnn(gru,tf.reshape(net,[-1,70,64]),sequence_length=seq_len,dtype=tf.float32, scope='gru')
 #gru =  tf.nn.rnn_cell.BasicLSTMCell(128,forget_bias=1.0)
 #gru_out, states = tf.nn.static_rnn(gru,tf.reshape(net,[-1,70,64]),dtype=tf.float32,scope='rnn')
+gru_out, state = tf.nn.dynamic_rnn(gru,net,dtype=tf.float32, scope='gru')
+
+gru2 = tf.nn.rnn_cell.MultiRNNCell([tf.nn.rnn_cell.GRUCell(64)] * 70)
+gru2_out, state = tf.nn.dynamic_rnn(gru2, gru_out, dtype=tf.float32, scope='gru2')
+gru2_out = tf.transpose(gru2_out, [1, 0, 2])
+gru2_out = tf.gather(gru2_out, int(gru2_out.get_shape()[0]) - 1)
+dropout_5 = tf.nn.dropout(gru2_out, 0.3)
+
 weights = tf.Variable(tf.random_normal([64,3], stddev=0.01))
+
+flat = tf.reshape(dropout_5, [-1, weights.get_shape().as_list()[0]])
 #output = tf.reshape(gru_out, [-1, weights.get_shape().as_list()[0]])
-print('gru_out',gru_out.get_shape())
-output = tf.reshape(gru_out, [-1, 64])
-print('output',output.get_shape())
-logit_out = tf.matmul(output, weights) + tf.Variable(tf.zeros([3]))
-print('logit_out',logit_out.get_shape())
-logit_out = tf.reshape(logit_out, [batch_size, -1, 3])
-print('logit_out',logit_out.get_shape())
-logit_out = tf.transpose(logit_out, (1,0,2))
-print('logit_out',logit_out.get_shape())
-pred = tf.nn.softmax(logit_out)
-#pred = tf.nn.softmax(tf.matmul(output, weights)+tf.Variable(tf.zeros([3])))
+#print('gru_out',gru_out.get_shape())
+#output = tf.reshape(gru_out, [-1, 64])
+#print('output',output.get_shape())
+#logit_out = tf.matmul(output, weights) + tf.Variable(tf.zeros([3]))
+#print('logit_out',logit_out.get_shape())
+#logit_out = tf.reshape(logit_out, [batch_size, -1, 3])
+#print('logit_out',logit_out.get_shape())
+#logit_out = tf.transpose(logit_out, (1,0,2))
+#print('logit_out',logit_out.get_shape())
+#pred = tf.nn.softmax(logit_out)
+pred = tf.nn.softmax(tf.matmul(flat, weights)+tf.Variable(tf.zeros([3])))
 print(pred.get_shape())
 print(tf.argmax(pred,1))
 # Loss and optimizer
