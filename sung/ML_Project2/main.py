@@ -78,6 +78,18 @@ net = tf.squeeze(net,[1])
 #seq_len = np.ones(32)*70
 gru = tf.nn.rnn_cell.MultiRNNCell([tf.nn.rnn_cell.GRUCell(64)]*70)
 #gru_out, state = tf.nn.dynamic_rnn(gru,tf.reshape(net,[-1,70,64]),sequence_length=seq_len,dtype=tf.float32, scope='gru')
+<<<<<<< HEAD
+=======
+gru_out, state = tf.nn.dynamic_rnn(gru,net,dtype=tf.float32, scope='gru')
+
+gru2 = tf.nn.rnn_cell.MultiRNNCell([tf.nn.rnn_cell.GRUCell(64)] * 70)
+gru2_out, state = tf.nn.dynamic_rnn(gru2, gru_out, dtype=tf.float32, scope='gru2')
+gru2_out = tf.transpose(gru2_out, [1, 0, 2])
+gru2_out = tf.gather(gru2_out, int(gru2_out.get_shape()[0]) - 1)
+dropout_5 = tf.nn.dropout(gru2_out, 0.3)
+
+flat = tf.reshape(dropout_5, [-1, weights.get_shape().as_list()[0]])
+>>>>>>> 9d71035deb40cb75ec9f0c04cc4501b89fde7204
 #gru =  tf.nn.rnn_cell.BasicLSTMCell(128,forget_bias=1.0)
 #gru_out, states = tf.nn.static_rnn(gru,tf.reshape(net,[-1,70,64]),dtype=tf.float32,scope='rnn')
 gru_out, state = tf.nn.dynamic_rnn(gru,net,dtype=tf.float32, scope='gru')
